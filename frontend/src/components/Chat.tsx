@@ -216,7 +216,7 @@ export const Chat: React.FC = () => {
                 onUserAtBottom={handleUserAtBottom}
                 typingUsers={typingUsers}
               />
-              <TypingIndicator typingUsers={typingUsers} />
+              <TypingIndicator typingUsers={typingUsers} users={users} />
             </div>
           )}
 

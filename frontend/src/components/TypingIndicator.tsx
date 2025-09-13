@@ -1,12 +1,14 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { TypingUser } from '../types/chat';
+import { getUsernameStyle } from '../utils/userColors';
 
 interface TypingIndicatorProps {
   typingUsers?: TypingUser[];
+  users: string[];
 }
 
-export const TypingIndicator: React.FC<TypingIndicatorProps> = ({ typingUsers }) => {
+export const TypingIndicator: React.FC<TypingIndicatorProps> = ({ typingUsers, users }) => {
   // Add null/undefined checks to prevent TypeError
   if (!typingUsers || typingUsers.length === 0) return null;
 
@@ -29,7 +31,12 @@ export const TypingIndicator: React.FC<TypingIndicatorProps> = ({ typingUsers })
               exit={{ opacity: 0, x: 10 }}
               transition={{ duration: 0.2, delay: 0.1 }}
             >
-              <span className="prefix">{user.nick}</span>
+              <span 
+                className="prefix" 
+                style={getUsernameStyle(user.nick, users)}
+              >
+                {user.nick}
+              </span>
               <div className="message">
                 <span className="body writing">
                   <motion.span 
