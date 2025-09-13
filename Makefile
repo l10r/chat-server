@@ -59,3 +59,40 @@ clean:
 
 # Quick start (build and run HTTP)
 quick: build run-http
+
+# Build all binaries for release
+build-all:
+	@echo "Building all binaries..."
+	./build.sh $(VERSION)
+
+# Create a new release tag
+release:
+	@echo "Creating release tag $(VERSION)..."
+	git tag -a $(VERSION) -m "Release $(VERSION)"
+	git push origin $(VERSION)
+
+# Build and release
+build-release: build-all release
+
+# Test a specific binary
+test-binary:
+	@echo "Testing binary..."
+	cd dist && tar -xzf chatserver-$(VERSION)-linux-amd64.tar.gz
+	cd dist && ./chatserver -port 8090 &
+	@sleep 3
+	@curl -f http://localhost:8090/health || (echo "Health check failed" && exit 1)
+	@pkill -f chatserver || true
+	@echo "Binary test passed!"
+
+# Clean build artifacts
+clean-build:
+	rm -rf build/ dist/
+
+# Show version
+version:
+	@echo "Version: $(VERSION)"
+
+# Set version (usage: make set-version VERSION=v1.0.0)
+set-version:
+	@echo "Setting version to $(VERSION)..."
+	@echo "Run 'make build-release' to build and tag the release"

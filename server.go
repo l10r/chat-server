@@ -29,6 +29,9 @@ import (
 //go:embed frontend/dist
 var reactAppEmbed embed.FS
 
+// Version information (set during build)
+var version = "dev"
+
 const (
 	MsgTypeLogin    = "login"
 	MsgTypeMessage  = "message"
@@ -454,7 +457,11 @@ func main() {
 	})
 
 	r.GET("/health", func(c *gin.Context) {
-		c.JSON(200, gin.H{"status": "ok"})
+		c.JSON(200, gin.H{
+			"status":  "ok",
+			"version": version,
+			"service": "chat-server",
+		})
 	})
 
 	embedFS, _ := fs.Sub(reactAppEmbed, "frontend/dist")
@@ -492,12 +499,12 @@ func main() {
 			},
 		}
 
-		log.Printf("Starting HTTPS server on port %d (with insecure skip verify)", *port)
+		log.Printf("Starting HTTPS server on port %d (version: %s, with insecure skip verify)", *port, version)
 		if err := server.ListenAndServeTLS("server.crt", "server.key"); err != nil {
 			log.Fatalf("Failed to start HTTPS server: %v", err)
 		}
 	} else {
-		log.Printf("Starting HTTP server on port %d", *port)
+		log.Printf("Starting HTTP server on port %d (version: %s)", *port, version)
 		r.Run(serverAddr)
 	}
 }

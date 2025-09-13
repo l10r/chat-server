@@ -1,0 +1,198 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., v1.0.0)'
+        required: true
+        type: string
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.23'
+        cache: true
+    
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: frontend/package-lock.json
+    
+    - name: Get version
+      id: version
+      run: |
+        if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+        else
+          echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+        fi
+        echo "Version: ${{ steps.version.outputs.version }}"
+    
+    - name: Install frontend dependencies
+      run: |
+        cd frontend
+        npm ci
+    
+    - name: Build frontend
+      run: |
+        cd frontend
+        npm run build
+    
+    - name: Cross-compile binaries
+      run: |
+        chmod +x build.sh
+        ./build.sh ${{ steps.version.outputs.version }}
+    
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: binaries-${{ steps.version.outputs.version }}
+        path: dist/
+        retention-days: 30
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: binaries-${{ github.ref_name }}
+        path: dist/
+    
+    - name: Get version
+      id: version
+      run: |
+        if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+        else
+          echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+        fi
+    
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ steps.version.outputs.version }}
+        name: Chat Server ${{ steps.version.outputs.version }}
+        body: |
+          ## Chat Server ${{ steps.version.outputs.version }}
+          
+          ### Features
+          - Real-time messaging with WebSocket
+          - Voice memo recording and playback
+          - File upload with drag-and-drop
+          - Markdown rendering with syntax highlighting
+          - Mobile-responsive design
+          - Docker support
+          - HTTPS with self-signed certificates
+          
+          ### Downloads
+          Choose the appropriate binary for your platform:
+          
+          **Linux:**
+          - `chatserver-${{ steps.version.outputs.version }}-linux-amd64.tar.gz` (64-bit Intel/AMD)
+          - `chatserver-${{ steps.version.outputs.version }}-linux-arm64.tar.gz` (64-bit ARM)
+          - `chatserver-${{ steps.version.outputs.version }}-linux-arm.tar.gz` (32-bit ARM)
+          
+          **Windows:**
+          - `chatserver-${{ steps.version.outputs.version }}-windows-amd64.zip` (64-bit Intel/AMD)
+          - `chatserver-${{ steps.version.outputs.version }}-windows-arm64.zip` (64-bit ARM)
+          
+          **macOS:**
+          - `chatserver-${{ steps.version.outputs.version }}-darwin-amd64.tar.gz` (Intel Macs)
+          - `chatserver-${{ steps.version.outputs.version }}-darwin-arm64.tar.gz` (Apple Silicon)
+          
+          **Other:**
+          - `chatserver-${{ steps.version.outputs.version }}-freebsd-amd64.tar.gz`
+          - `chatserver-${{ steps.version.outputs.version }}-openbsd-amd64.tar.gz`
+          
+          ### Quick Start
+          1. Download the appropriate binary for your platform
+          2. Extract the archive
+          3. Run: `./chatserver -port 8090` (or `chatserver.exe -port 8090` on Windows)
+          4. Open http://localhost:8090 in your browser
+          
+          ### HTTPS Mode
+          For HTTPS with self-signed certificates:
+          ```bash
+          ./chatserver -port 8443 -secure
+          ```
+          
+          ### Docker
+          ```bash
+          docker run -p 8090:8090 ghcr.io/l10r/chat-server:latest
+          ```
+          
+          ### Documentation
+          - [README](README.md)
+          - [Docker Guide](DOCKER.md)
+          - [Server Usage](SERVER_USAGE.md)
+        files: |
+          dist/*
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  docker:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    
+    - name: Log in to GitHub Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ghcr.io/l10r/chat-server
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
+          type=raw,value=latest,enable={{is_default_branch}}
+    
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        platforms: linux/amd64,linux/arm64
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
