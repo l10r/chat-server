@@ -30,7 +30,7 @@ import (
 var reactAppEmbed embed.FS
 
 // Version information (set during build)
-var version = "dev"
+var version = "v1.1.0"
 
 const (
 	MsgTypeLogin    = "login"
