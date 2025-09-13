@@ -34,23 +34,24 @@ echo "Releases: https://github.com/l10r/chat-server/releases"
 echo "Actions: https://github.com/l10r/chat-server/actions"
 echo
 
-print_status "Monitoring release v1.0.0..."
+VERSION=${1:-"v1.0.0"}
+print_status "Monitoring release $VERSION..."
 
 # Check if GitHub CLI is available
 if command -v gh &> /dev/null; then
     print_status "Using GitHub CLI to monitor release..."
     
     # Check if release exists
-    if gh release view v1.0.0 --repo l10r/chat-server &>/dev/null; then
-        print_status "✓ Release v1.0.0 found!"
+    if gh release view "$VERSION" --repo l10r/chat-server &>/dev/null; then
+        print_status "✓ Release $VERSION found!"
         echo
         print_header "Release Details"
-        gh release view v1.0.0 --repo l10r/chat-server --json name,tagName,publishedAt,assets --jq '.name, .tagName, .publishedAt, (.assets | length) as $count | "Assets: \($count)"'
+        gh release view "$VERSION" --repo l10r/chat-server --json name,tagName,publishedAt,assets --jq '.name, .tagName, .publishedAt, (.assets | length) as $count | "Assets: \($count)"'
         echo
         print_header "Release Assets"
-        gh release view v1.0.0 --repo l10r/chat-server --json assets --jq '.assets[] | "\(.name) (\(.size | . / 1024 / 1024 | floor) MB)"'
+        gh release view "$VERSION" --repo l10r/chat-server --json assets --jq '.assets[] | "\(.name) (\(.size | . / 1024 / 1024 | floor) MB)"'
     else
-        print_warning "Release v1.0.0 not found yet."
+        print_warning "Release $VERSION not found yet."
         print_status "Checking GitHub Actions status..."
         
         # Check if workflow is running
@@ -72,14 +73,14 @@ fi
 echo
 print_header "Expected Release Contents"
 echo "The release should include these binaries:"
-echo "- chatserver-v1.0.0-linux-amd64.tar.gz"
-echo "- chatserver-v1.0.0-linux-arm64.tar.gz" 
-echo "- chatserver-v1.0.0-linux-arm.tar.gz"
-echo "- chatserver-v1.0.0-windows-amd64.zip"
-echo "- chatserver-v1.0.0-windows-arm64.zip"
-echo "- chatserver-v1.0.0-darwin-amd64.tar.gz"
-echo "- chatserver-v1.0.0-darwin-arm64.tar.gz"
-echo "- chatserver-v1.0.0-freebsd-amd64.tar.gz"
-echo "- chatserver-v1.0.0-openbsd-amd64.tar.gz"
+echo "- chatserver-${VERSION}-linux-amd64.tar.gz"
+echo "- chatserver-${VERSION}-linux-arm64.tar.gz" 
+echo "- chatserver-${VERSION}-linux-arm.tar.gz"
+echo "- chatserver-${VERSION}-windows-amd64.zip"
+echo "- chatserver-${VERSION}-windows-arm64.zip"
+echo "- chatserver-${VERSION}-darwin-amd64.tar.gz"
+echo "- chatserver-${VERSION}-darwin-arm64.tar.gz"
+echo "- chatserver-${VERSION}-freebsd-amd64.tar.gz"
+echo "- chatserver-${VERSION}-openbsd-amd64.tar.gz"
 echo
 echo "Each binary is standalone with embedded frontend (no dependencies required)."
