@@ -1,0 +1,9 @@
+---
+description:
+globs:
+alwaysApply: true
+---
+
+- Keep things KISS, modular, easy to maintain. Especially in frontend.
+- Avoid using classes in frontend at all costs.
+- Avoid using keyboard icons in the frontend

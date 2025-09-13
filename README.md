@@ -1,55 +1,155 @@
-# chat
-Simple plug & play real-time JavaScript chat implemented using Socket.io.
+# Chat Application
 
-Where simplicity meets usability:
+A real-time chat application with Go WebSocket server and React frontend.
 
-* No user accounts - just enter nickname and join.
-* No history saved by default - only logged-in users can see recent history.
-* No configuration.
-* Only one room - you can't create any other rooms or write PM to others.
-* Files sharing is possible - without storing any data on server.
-* Emojis - just a few of them.
+## Features
 
-![screenshot](https://raw.githubusercontent.com/m1k1o/chat/master/screenshot.png)
+- Real-time messaging
+- Multiple channels
+- Voice memos
+- File attachments
+- Typing indicators
+- User list
+- Copy message functionality
+- Dark theme UI
 
-## docker
+## Architecture
 
-```sh
-docker run -d \
-	--name chat \
-	-p 80:80 \
-	m1k1o/chat:latest
+### Backend (Go)
+- WebSocket server using Gorilla WebSocket
+- Channel-based messaging
+- User management
+- CORS support
+
+### Frontend (React + TypeScript)
+- Native WebSocket client (no Socket.IO)
+- Modular architecture with services and hooks
+- Vite for development and building
+- Modern React with hooks
+
+## Getting Started
+
+### Prerequisites
+- Go 1.21+
+- Node.js 18+
+- npm or yarn
+
+### Backend Setup
+
+1. Install Go dependencies:
+```bash
+go mod tidy
 ```
 
-## docker-compose
+2. Run the server:
+```bash
+go run server.go
+```
 
-```yml
-version: "3"
-services:
-  chat:
-    image: m1k1o/chat:latest
-    restart: unless-stopped
-    ports:
-      - 80:80
-    environment:
-      CACHE_SIZE: 50 # optional: message count stored. Defaults to zero.
- ```
+The server will start on port 8090.
 
-## Cache
-`CACHE_SIZE` is optional and determines the number of messages stored on the server. When new users join (or reconnect), that cache is sent to give a brief history. This defaults to zero, but can be set as an environment variable.
+### Frontend Setup
 
-If you're not running in a docker container, you can make a `.env` file in the project root with `CACHE_SIZE=50` in.
+1. Install dependencies:
+```bash
+cd frontend
+npm install
+```
 
-Note: This cache will be text or images so be mindful not to set it too high as it could be n images sent to every new user.
+2. Start development server:
+```bash
+npm run dev
+```
 
-## How to install
+The frontend will be available at http://localhost:5173
 
-Requirements: `nodejs`, `npm`
+## API
 
-1. Clone this repository.
-	- `git clone https://github.com/m1k1o/chat .`
-2. Install server dependencies.
-	- `npm install`
-3. Run server (default port is `80`).
-	- `npm start [custom_port]`
-4. Done, visit your chat in browser.
+### WebSocket Messages
+
+#### Client to Server
+
+**Login:**
+```json
+{
+  "type": "login",
+  "nick": "username",
+  "channel": "channelname"
+}
+```
+
+**Send Message:**
+```json
+{
+  "type": "message",
+  "data": "Hello world"
+}
+```
+
+**Typing Indicator:**
+```json
+{
+  "type": "typing",
+  "typing": true
+}
+```
+
+#### Server to Client
+
+**New Message:**
+```json
+{
+  "type": "new-msg",
+  "message": {
+    "id": "msg_1",
+    "f": "username",
+    "t": 1640995200000,
+    "m": "Hello world"
+  }
+}
+```
+
+**User List:**
+```json
+{
+  "type": "userlist",
+  "users": ["user1", "user2"]
+}
+```
+
+**Typing:**
+```json
+{
+  "type": "typing",
+  "user": "username",
+  "typing": true
+}
+```
+
+## Project Structure
+
+```
+chat/
+├── server.go              # Go WebSocket server
+├── go.mod                 # Go dependencies
+├── html/                  # Static files
+├── frontend/
+│   ├── src/
+│   │   ├── components/    # React components
+│   │   ├── hooks/         # Custom hooks
+│   │   ├── services/      # Business logic
+│   │   ├── utils/         # Utilities
+│   │   └── types/         # TypeScript types
+│   └── package.json
+└── README.md
+```
+
+## Development
+
+The application follows KISS (Keep It Simple, Stupid) principles:
+
+- Simple WebSocket protocol
+- Modular frontend architecture
+- Minimal dependencies
+- Clear separation of concerns
+- Easy to understand and maintain
