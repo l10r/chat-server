@@ -17,7 +17,7 @@ frontend/build
 # Logs
 *.log
 server.log
-
+dist/
 # Certificates (sensitive)
 server.crt
 server.key
