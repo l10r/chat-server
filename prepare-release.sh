@@ -37,18 +37,11 @@ print_status "Building binaries..."
 # Build the binaries
 ./build.sh "$VERSION"
 
-# Create release directory
-RELEASE_DIR="release-$VERSION"
-mkdir -p "$RELEASE_DIR"
-
-# Copy all binaries to release directory
-cp dist/*.tar.gz "$RELEASE_DIR/"
-cp dist/*.zip "$RELEASE_DIR/"
-
-print_status "Created release directory: $RELEASE_DIR"
+# Use dist directory directly
+print_status "Using dist directory for release files"
 
 # Create release notes
-cat > "$RELEASE_DIR/RELEASE_NOTES.md" << EOF
+cat > "dist/RELEASE_NOTES.md" << EOF
 # Release $VERSION
 
 First stable release with cross-compilation support
@@ -98,7 +91,7 @@ docker run -p 8090:8090 l10r/chat-server:latest
 EOF
 
 # Create upload instructions
-cat > "$RELEASE_DIR/UPLOAD_INSTRUCTIONS.md" << EOF
+cat > "dist/UPLOAD_INSTRUCTIONS.md" << EOF
 # Manual Upload Instructions
 
 ## Step 1: Go to GitHub Releases
@@ -111,30 +104,30 @@ cat > "$RELEASE_DIR/UPLOAD_INSTRUCTIONS.md" << EOF
 3. **Description**: Copy from RELEASE_NOTES.md
 
 ## Step 3: Upload Files
-Upload all files from this directory:
-$(ls -la "$RELEASE_DIR"/*.tar.gz "$RELEASE_DIR"/*.zip 2>/dev/null | awk '{print "- " $9}' | sed 's|.*/||')
+Upload all files from the dist directory:
+$(ls -la dist/*.tar.gz dist/*.zip 2>/dev/null | awk '{print "- " $9}' | sed 's|.*/||')
 
 ## Step 4: Publish
 1. Check "Set as the latest release"
 2. Click "Publish release"
 
-## Files in this directory:
-$(ls -la "$RELEASE_DIR"/)
+## Files in dist directory:
+$(ls -la dist/)
 EOF
 
 print_header "Release Files Prepared"
-echo "Release directory: $RELEASE_DIR"
+echo "Release files in: dist/"
 echo
 print_status "Files created:"
-ls -la "$RELEASE_DIR"/
+ls -la dist/
 
 echo
 print_header "Next Steps"
 echo "1. Go to: https://github.com/l10r/chat-server/releases"
 echo "2. Click 'Create a new release'"
 echo "3. Use tag: $VERSION"
-echo "4. Upload all files from: $RELEASE_DIR/"
-echo "5. Copy release notes from: $RELEASE_DIR/RELEASE_NOTES.md"
+echo "4. Upload all files from: dist/"
+echo "5. Copy release notes from: dist/RELEASE_NOTES.md"
 echo
-print_status "Release directory contents:"
-echo "$(ls -la "$RELEASE_DIR"/)"
+print_status "Dist directory contents:"
+echo "$(ls -la dist/)"
