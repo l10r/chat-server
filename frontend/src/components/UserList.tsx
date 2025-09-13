@@ -44,10 +44,12 @@ export const UserList: React.FC<UserListProps> = ({ users, maxVisible = 5 }) => 
               backgroundColor: getUsernameStyle(user, users).backgroundColor,
               color: getUsernameStyle(user, users).color,
               fontSize: '12px',
+              fontWeight: 'bold',
               height: '24px',
               margin: '2px',
               '& .MuiChip-label': {
-                padding: '0 8px'
+                padding: '0 8px',
+                fontWeight: 'bold'
               }
             }}
           />
@@ -131,9 +133,11 @@ export const UserList: React.FC<UserListProps> = ({ users, maxVisible = 5 }) => 
                   backgroundColor: getUsernameStyle(user, users).backgroundColor,
                   color: getUsernameStyle(user, users).color,
                   fontSize: '14px',
+                  fontWeight: 'bold',
                   height: '32px',
                   '& .MuiChip-label': {
-                    padding: '0 12px'
+                    padding: '0 12px',
+                    fontWeight: 'bold'
                   }
                 }}
               />

@@ -42,6 +42,6 @@ export function getUserColor(username: string, userList: string[]): string {
 export function getUsernameStyle(username: string, userList: string[]): React.CSSProperties {
   return {
     color: getUserColor(username, userList),
-    fontWeight: 600,
+    fontWeight: 700,
   };
 }

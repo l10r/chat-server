@@ -127,7 +127,7 @@ body {
 }
 
 .username {
-  font-weight: 600;
+  font-weight: 700;
   font-size: 14px;
   font-family: 'JetBrains Mono', monospace;
 }
@@ -199,6 +199,17 @@ body {
   font-style: italic;
   font-size: 14px;
   font-family: 'JetBrains Mono', monospace;
+}
+
+.typing-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.typing-item .prefix {
+  font-weight: 700;
+  color: #4a9eff;
 }
 
 .typing-dots {
