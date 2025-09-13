@@ -1,21 +1,55 @@
-FROM node:14-slim
+# Build stage
+FROM golang:1.23-alpine AS builder
 
-#
-# create app directory
-WORKDIR /usr/src/app
+# Install build dependencies
+RUN apk add --no-cache git ca-certificates tzdata
 
-#
-# install app dependencies
-COPY package*.json ./
-RUN npm install
+# Set working directory
+WORKDIR /app
 
-#
-# copy app
+# Copy go mod files
+COPY go.mod go.sum ./
+
+# Download dependencies
+RUN go mod download
+
+# Copy source code
 COPY . .
 
-ENV MAX_HTTP_BUFFER_SIZE_MB=1
+# Build the application
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o chatserver server.go
 
-ENTRYPOINT [ "node", "server.js" ]
+# Final stage
+FROM alpine:latest
 
-EXPOSE 80
-CMD [ "80" ]
+# Install ca-certificates for HTTPS support
+RUN apk --no-cache add ca-certificates tzdata
+
+# Create non-root user
+RUN addgroup -g 1001 -S appgroup && \
+    adduser -u 1001 -S appuser -G appgroup
+
+# Set working directory
+WORKDIR /app
+
+# Copy the binary from builder stage
+COPY --from=builder /app/chatserver .
+
+# Copy frontend build (if exists)
+COPY --from=builder /app/frontend/dist ./frontend/dist
+
+# Change ownership to non-root user
+RUN chown -R appuser:appgroup /app
+
+# Switch to non-root user
+USER appuser
+
+# Expose ports
+EXPOSE 8090 8443
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost:8090/health || exit 1
+
+# Default command (HTTP mode)
+CMD ["./chatserver", "-port", "8090"]

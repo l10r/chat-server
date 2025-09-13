@@ -1,3 +1,7 @@
+import debug from 'debug';
+
+const log = debug('chat:voice-memo');
+
 export interface VoiceMemoData {
   type: string;
   url: string;
@@ -25,16 +29,56 @@ export class VoiceMemoRecorder {
       this.audioChunks = [];
       
       // Try different audio formats for better compatibility
-      let mimeType = 'audio/webm;codecs=opus';
-      if (!MediaRecorder.isTypeSupported(mimeType)) {
-        mimeType = 'audio/webm';
-        if (!MediaRecorder.isTypeSupported(mimeType)) {
-          mimeType = 'audio/mp4';
-          if (!MediaRecorder.isTypeSupported(mimeType)) {
-            mimeType = 'audio/wav';
+      // Prioritize formats that work across browsers
+      const supportedFormats = [
+        'audio/webm;codecs=opus',  // Chrome preferred
+        'audio/webm',              // Firefox fallback
+        'audio/mp4;codecs=mp4a.40.2', // Safari/Edge
+        'audio/mp4',
+        'audio/ogg;codecs=opus',   // Firefox preferred
+        'audio/ogg',
+        'audio/wav'                // Universal fallback
+      ];
+      
+      let mimeType = 'audio/webm;codecs=opus'; // Default
+      for (const format of supportedFormats) {
+        if (MediaRecorder.isTypeSupported(format)) {
+          mimeType = format;
+          log('Using audio format:', mimeType);
+          break;
+        }
+      }
+      
+      // Force a more compatible format for cross-browser playback
+      // If we're in Firefox, prefer formats that Chrome can also play
+      const isFirefox = navigator.userAgent.toLowerCase().includes('firefox');
+      if (isFirefox) {
+        // Try to use a format that works in both browsers
+        const crossBrowserFormats = [
+          'audio/webm;codecs=opus',
+          'audio/webm',
+          'audio/mp4;codecs=mp4a.40.2',
+          'audio/mp4'
+        ];
+        
+        for (const format of crossBrowserFormats) {
+          if (MediaRecorder.isTypeSupported(format)) {
+            mimeType = format;
+            log('Firefox: Using cross-browser compatible format:', mimeType);
+            break;
           }
         }
       }
+      
+      log('Browser audio support check:', {
+        'audio/webm;codecs=opus': MediaRecorder.isTypeSupported('audio/webm;codecs=opus'),
+        'audio/webm': MediaRecorder.isTypeSupported('audio/webm'),
+        'audio/mp4': MediaRecorder.isTypeSupported('audio/mp4'),
+        'audio/ogg': MediaRecorder.isTypeSupported('audio/ogg'),
+        'audio/wav': MediaRecorder.isTypeSupported('audio/wav'),
+        'isFirefox': isFirefox,
+        'selectedFormat': mimeType
+      });
       
       this.mediaRecorder = new MediaRecorder(this.stream, {
         mimeType: mimeType
@@ -50,7 +94,7 @@ export class VoiceMemoRecorder {
       this.recordingStartTime = Date.now();
       
     } catch (error) {
-      console.error('Error starting voice recording:', error);
+      log('Error starting voice recording:', error);
       throw new Error('Could not access microphone. Please check permissions.');
     }
   }
@@ -85,7 +129,7 @@ export class VoiceMemoRecorder {
       duration: Math.round(duration / 1000) // Convert to seconds
     };
 
-    console.log('Voice memo created:', {
+    log('Voice memo created:', {
       size: audioBlob.size,
       type: audioBlob.type,
       mimeType: mimeType,

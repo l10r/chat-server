@@ -1,4 +1,7 @@
 import { useRef, useCallback, useState } from 'react';
+import debug from 'debug';
+
+const log = debug('chat:notifications');
 
 export const useNotifications = () => {
   const beepRef = useRef<(HTMLAudioElement & { playclip?: () => void }) | null>(null);
@@ -6,6 +9,7 @@ export const useNotifications = () => {
   const ttoutRef = useRef<NodeJS.Timeout | null>(null);
   const msgsRef = useRef(0);
   const lastSoundTimeRef = useRef<number>(0);
+  const soundThrottledRef = useRef<boolean>(false);
   const [soundEnabled, setSoundEnabled] = useState<boolean>(() => {
     const saved = localStorage.getItem('chatSoundEnabled');
     return saved !== null ? JSON.parse(saved) : true;
@@ -27,7 +31,7 @@ export const useNotifications = () => {
         const playPromise = audioElement.play();
         if (playPromise !== undefined) {
           playPromise.catch(error => {
-            console.error('Error playing audio:', error);
+            log('Error playing audio:', error);
           });
         }
       };
@@ -37,18 +41,52 @@ export const useNotifications = () => {
     return null;
   }, []);
 
-  const playDebouncedSound = useCallback(() => {
-    if (!soundEnabled) return;
+  const playThrottledSound = useCallback(() => {
+    if (!soundEnabled) {
+      log('Sound disabled, not playing');
+      return;
+    }
     
     const now = Date.now();
-    const timeSinceLastSound = now - lastSoundTimeRef.current;
-    const DEBOUNCE_DELAY = 1000; // 1 second debounce
+    const THROTTLE_DURATION = 60000; // 1 minute
+    const MIN_SOUND_INTERVAL = 1000; // 1 second minimum between sounds
     
-    if (timeSinceLastSound >= DEBOUNCE_DELAY) {
-      if (beepRef.current && beepRef.current.playclip) {
-        beepRef.current.playclip();
-        lastSoundTimeRef.current = now;
-      }
+    log('Sound check:', {
+      now,
+      lastSoundTime: lastSoundTimeRef.current,
+      timeSinceLastSound: now - lastSoundTimeRef.current,
+      throttleDuration: THROTTLE_DURATION,
+      minInterval: MIN_SOUND_INTERVAL,
+      soundThrottled: soundThrottledRef.current
+    });
+    
+    // Check if we're currently throttled
+    if (soundThrottledRef.current) {
+      log('Sound throttled: currently in throttle period');
+      return;
+    }
+    
+    // Check minimum interval between sounds
+    const timeSinceLastSound = now - lastSoundTimeRef.current;
+    if (timeSinceLastSound < MIN_SOUND_INTERVAL) {
+      log('Sound throttled: too soon since last sound', timeSinceLastSound, 'ms');
+      return; // Too soon since last sound
+    }
+    
+    // Play the sound
+    if (beepRef.current && beepRef.current.playclip) {
+      log('Playing notification sound at', now);
+      beepRef.current.playclip();
+      lastSoundTimeRef.current = now;
+      soundThrottledRef.current = true;
+      
+      // Set a timeout to reset the throttle after 1 minute
+      setTimeout(() => {
+        log('Resetting sound throttle after 1 minute');
+        soundThrottledRef.current = false;
+      }, THROTTLE_DURATION);
+    } else {
+      log('No beep ref or playclip function available');
     }
   }, [soundEnabled]);
 
@@ -92,7 +130,7 @@ export const useNotifications = () => {
       }, 1500);
     }
 
-    playDebouncedSound();
+    playThrottledSound();
 
     if (Notification.permission !== 'granted') {
       Notification.requestPermission();
@@ -113,7 +151,14 @@ export const useNotifications = () => {
       window.parent.focus();
       window.focus();
     };
-  }, [setFavicon, clearNotification]);
+  }, [setFavicon, clearNotification, playThrottledSound]);
+
+  const resetSoundThrottling = useCallback(() => {
+    // Reset sound throttling when user focuses the window
+    log('Resetting sound throttling');
+    lastSoundTimeRef.current = 0; // Reset last sound time to allow immediate sound
+    soundThrottledRef.current = false; // Reset throttle flag
+  }, []);
 
   const clearAll = useCallback(() => {
     clearNotification();
@@ -124,6 +169,7 @@ export const useNotifications = () => {
     msgsRef.current = 0;
     setFavicon('green');
     document.title = 'Chat';
+    // Don't reset sound throttling here - only reset on explicit focus
   }, [clearNotification, setFavicon]);
 
   const init = useCallback(() => {
@@ -137,5 +183,6 @@ export const useNotifications = () => {
     init,
     soundEnabled,
     toggleSound,
+    resetSoundThrottling,
   };
 };

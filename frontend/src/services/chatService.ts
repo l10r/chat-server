@@ -1,6 +1,9 @@
 import { connectWebSocket, sendMessage, disconnectWebSocket, isConnected } from '../utils/websocket';
 import type { WebSocketMessage } from '../utils/websocket';
 import type { Message, TypingUser } from '../types/chat';
+import debug from 'debug';
+
+const log = debug('chat:service');
 
 // Generate WebSocket URL based on environment and current location
 const getWebSocketUrl = (): string => {
@@ -8,7 +11,7 @@ const getWebSocketUrl = (): string => {
   
   if (isDevelopment) {
     const url = 'ws://localhost:8090/ws';
-    console.log('Development mode - using WebSocket URL:', url);
+    log('Development mode - using WebSocket URL:', url);
     return url;
   }
   
@@ -16,7 +19,7 @@ const getWebSocketUrl = (): string => {
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
   const host = window.location.host;
   const url = `${protocol}//${host}/ws`;
-  console.log('Production mode - using WebSocket URL:', url);
+    log('Production mode - using WebSocket URL:', url);
   return url;
 };
 
@@ -34,15 +37,15 @@ export const initChat = (callbacks: {
 }) => {
   connectWebSocket(getWebSocketUrl(), {
     onOpen: () => {
-      console.log('Connected to chat server');
+      log('Connected to chat server');
       callbacks.onConnect?.();
     },
     onClose: () => {
-      console.log('Disconnected from chat server');
+      log('Disconnected from chat server');
       callbacks.onDisconnect?.();
     },
     onError: (error) => {
-      console.error('Chat error:', error);
+      log('Chat error:', error);
     },
     onMessage: (message: WebSocketMessage) => {
       switch (message.type) {

@@ -22,7 +22,7 @@ export const Chat: React.FC = () => {
   const [urlCopied, setUrlCopied] = useState(false);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
-  
+
   const {
     messages,
     users,
@@ -35,8 +35,8 @@ export const Chat: React.FC = () => {
   } = useChat();
 
   const isOnline = isConnected;
-  const { createNotification, clearAll, init, soundEnabled, toggleSound } = useNotifications();
-  
+  const { createNotification, clearAll, init, soundEnabled, toggleSound, resetSoundThrottling } = useNotifications();
+
 
   // Initialize notifications
   useEffect(() => {
@@ -49,7 +49,7 @@ export const Chat: React.FC = () => {
       const lastMessage = messages[messages.length - 1];
       const isFromSelf = lastMessage.f === currentUser;
       const isFocused = document.hasFocus();
-      
+
       if (!isFromSelf) {
         createNotification(lastMessage.f, lastMessage.m, isFocused, soundEnabled);
       }
@@ -63,10 +63,11 @@ export const Chat: React.FC = () => {
     };
   }, [clearAll]);
 
-  // Clear notifications when window regains focus
+  // Clear notifications and reset sound throttling when window regains focus
   useEffect(() => {
     const handleFocus = () => {
       clearAll();
+      resetSoundThrottling();
     };
 
     const handleVisibilityChange = () => {
@@ -82,12 +83,12 @@ export const Chat: React.FC = () => {
       window.removeEventListener('focus', handleFocus);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [clearAll]);
+  }, [clearAll, resetSoundThrottling]);
 
   // Get channel from URL path or query parameter
   useEffect(() => {
     const search = window.location.search;
-    
+
     if (search) {
       // Handle ?channelname format (like ?testtt)
       const channel = search.substring(1); // Remove the ?
@@ -177,128 +178,140 @@ export const Chat: React.FC = () => {
   return (
     <GlobalDropZone onFileUpload={handleGlobalFileUpload}>
       <div className="chat">
-      <div className="chat-box">
-        {isConnecting && !currentUser && (
-          <div className="connecting">
-            <LoadingSpinner size="large" />
-            <p>Connecting to chat...</p>
-            <button 
-              onClick={() => window.location.reload()} 
-              style={{ marginTop: '10px', padding: '8px 16px' }}
-            >
-              Skip & Login
-            </button>
-          </div>
-        )}
-        
-        {!isConnected && !isConnecting && (
-          <div id="offline">
-            <span className="big">Server is offline.</span><br />
-            Sorry for that.
-            <br />
-            <button 
-              onClick={() => window.location.reload()} 
-              style={{ marginTop: '10px', padding: '8px 16px' }}
-            >
-              Retry Connection
-            </button>
-          </div>
-        )}
-        
-        {isConnected && currentUser && (
-          <div className="messages-container" ref={messagesContainerRef}>
-                    <MessageList
-                      messages={messages}
-                      currentUser={currentUser}
-                      users={users}
-                      scrollContainerRef={messagesContainerRef}
-                      onUserAtBottom={handleUserAtBottom}
-                      typingUsers={typingUsers}
-                    />
-            <TypingIndicator typingUsers={typingUsers} />
-          </div>
-        )}
-        
-        <div className="chat-form">
-          {isConnected && currentUser && (
-            <div className="user-section">
-              <div className="channel-info">
-                <span className="channel-name">#{currentChannel}</span>
-                <Tooltip title="Copy channel URL">
-                  <IconButton 
-                    onClick={() => {
-                      const url = currentChannel === 'main' 
-                        ? `${window.location.origin}/`
-                        : `${window.location.origin}/?${currentChannel}`;
-                      navigator.clipboard.writeText(url);
-                      setUrlCopied(true);
-                      setTimeout(() => setUrlCopied(false), 2000);
-                    }}
-                    size="small"
-                    sx={{ 
-                      color: '#fff',
-                      '&:hover': {
-                        backgroundColor: 'rgba(255, 255, 255, 0.1)'
-                      }
-                    }}
-                  >
-                    {urlCopied ? <CheckIcon /> : <ClipboardIcon />}
-                  </IconButton>
-                </Tooltip>
-                <UserList users={users} />
-              </div>
-              {currentUser && (
-                <div className="user-actions">
-                  <span className="current-user">Logged in as: {currentUser}</span>
-                           <Tooltip title={soundEnabled ? "Disable notification sound" : "Enable notification sound"}>
-                             <IconButton
-                               onClick={toggleSound}
-                               size="small"
-                               sx={{
-                                 color: soundEnabled ? '#4a9eff' : '#666',
-                                 '&:hover': {
-                                   backgroundColor: 'rgba(255, 255, 255, 0.1)'
-                                 }
-                               }}
-                             >
-                               {soundEnabled ? <VolumeUp /> : <VolumeOff />}
-                             </IconButton>
-                           </Tooltip>
-                  <button onClick={handleLogout} className="logout-button">
-                    Logout
-                  </button>
-                </div>
-              )}
+        <div className="chat-box">
+          {isConnecting && !currentUser && (
+            <div className="connecting">
+              <LoadingSpinner size="large" />
+              <p>Connecting to chat...</p>
+              <button
+                onClick={() => window.location.reload()}
+                style={{ marginTop: '10px', padding: '8px 16px' }}
+              >
+                Skip & Login
+              </button>
             </div>
           )}
+
+          {!isConnected && !isConnecting && (
+            <div id="offline">
+              <span className="big">Server is offline.</span><br />
+              Sorry for that.
+              <br />
+              <button
+                onClick={() => window.location.reload()}
+                style={{ marginTop: '10px', padding: '8px 16px' }}
+              >
+                Retry Connection
+              </button>
+            </div>
+          )}
+
+          {isConnected && currentUser && (
+            <div className="messages-container" ref={messagesContainerRef}>
+              <MessageList
+                messages={messages}
+                currentUser={currentUser}
+                users={users}
+                scrollContainerRef={messagesContainerRef}
+                onUserAtBottom={handleUserAtBottom}
+                typingUsers={typingUsers}
+              />
+              <TypingIndicator typingUsers={typingUsers} />
+            </div>
+          )}
+
+          <div className="chat-form">
+            {isConnected && currentUser && (
+              <div className="user-section">
+                <div className="channel-info">
+                  <span className="channel-name">#{currentChannel}</span>
+                  <Tooltip title="Copy channel URL">
+                    <IconButton
+                      onClick={() => {
+                        const url = currentChannel === 'main'
+                          ? `${window.location.origin}/`
+                          : `${window.location.origin}/?${currentChannel}`;
+                        navigator.clipboard.writeText(url);
+                        setUrlCopied(true);
+                        setTimeout(() => setUrlCopied(false), 2000);
+                      }}
+                      size="small"
+                      sx={{
+                        color: '#fff',
+                        '&:hover': {
+                          backgroundColor: 'rgba(255, 255, 255, 0.1)'
+                        }
+                      }}
+                    >
+                      {urlCopied ? <CheckIcon /> : <ClipboardIcon />}
+                    </IconButton>
+                  </Tooltip>
+                  <UserList users={users} />
+                </div>
+                {currentUser && (
+                  <div className="user-actions">
+                    <span className="current-user">Logged in as: {currentUser}</span>
+                    <Tooltip title={soundEnabled ? "Disable notification sound" : "Enable notification sound"}>
+                      <IconButton
+                        onClick={toggleSound}
+                        size="small"
+                        sx={{
+                          color: soundEnabled ? '#4a9eff' : '#666',
+                          '&:hover': {
+                            backgroundColor: 'rgba(255, 255, 255, 0.1)'
+                          }
+                        }}
+                      >
+                        {soundEnabled ? <VolumeUp /> : <VolumeOff />}
+                      </IconButton>
+                    </Tooltip>
+                    <button onClick={handleLogout} className="logout-button">
+                      Logout
+                    </button>
+                    <Tooltip title={isConnected ? 'Connected' : isConnecting ? 'Connecting...' : 'Disconnected'}>
+                      <div className="connection-status-mobile">
+                        <motion.div
+                          className="connection-indicator"
+                          animate={{
+                            backgroundColor: isConnected ? '#4caf50' : '#f44336',
+                            scale: isConnected ? 1 : 0.9
+                          }}
+                          transition={{ duration: 0.2 }}
+                        />
+                      </div>
+                    </Tooltip>
+                  </div>
+                )}
+              </div>
+            )}
             <MessageInput
               onSendMessage={handleSendMessage}
               onTypingChange={handleTypingChange}
               disabled={!isOnline}
             />
-            <motion.div 
-              className="connection-status"
+            <motion.div
+              className="connection-status connection-status-desktop"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3 }}
             >
               <motion.div
-                animate={{ 
+                animate={{
                   color: isConnected ? '#4caf50' : '#f44336',
                   scale: isConnected ? 1 : 0.9
                 }}
                 transition={{ duration: 0.2 }}
               >
-                <StatusIcon 
-                  style={{ 
+                <StatusIcon
+                  style={{
                     fontSize: '10px',
                     marginRight: '4px'
-                  }} 
+                  }}
                 />
               </motion.div>
-              <motion.span 
-                style={{ 
-                  fontSize: '10px', 
+              <motion.span
+                style={{
+                  fontSize: '10px',
                   color: '#888',
                   fontFamily: 'JetBrains Mono, monospace'
                 }}
@@ -311,15 +324,15 @@ export const Chat: React.FC = () => {
                 {isConnected ? 'Connected' : isConnecting ? 'Connecting...' : 'Disconnected'}
               </motion.span>
             </motion.div>
+          </div>
         </div>
-      </div>
 
-      <LoginModal
-        isOpen={showLoginModal}
-        onLogin={handleLogin}
-        error={loginError || undefined}
-      />
-    </div>
+        <LoginModal
+          isOpen={showLoginModal}
+          onLogin={handleLogin}
+          error={loginError || undefined}
+        />
+      </div>
     </GlobalDropZone>
   );
 };

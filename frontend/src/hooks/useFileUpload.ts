@@ -1,4 +1,7 @@
 import { useCallback } from 'react';
+import debug from 'debug';
+
+const log = debug('chat:file-upload');
 
 export interface FileUploadOptions {
   maxSize?: number; // in bytes
@@ -36,7 +39,7 @@ export const useFileUpload = (options: FileUploadOptions = {}) => {
 
     // If no valid type found, but we allow any type, just warn but don't fail
     if (!isValidType && allowedTypes.includes('*/*')) {
-      console.warn(`Unknown file type: ${file.type} for file: ${file.name}`);
+      log(`Unknown file type: ${file.type} for file: ${file.name}`);
       return true; // Allow it anyway
     }
 
@@ -59,7 +62,7 @@ export const useFileUpload = (options: FileUploadOptions = {}) => {
 
       // Handle very large files more gracefully
       if (file.size > 100 * 1024 * 1024) { // 100MB
-        console.warn(`Processing large file: ${file.name} (${Math.round(file.size / (1024 * 1024))}MB)`);
+        log(`Processing large file: ${file.name} (${Math.round(file.size / (1024 * 1024))}MB)`);
       }
 
       const reader = new FileReader();
@@ -72,13 +75,13 @@ export const useFileUpload = (options: FileUploadOptions = {}) => {
             reject(new Error('Failed to read file - no result'));
           }
         } catch (error) {
-          console.error('Error processing file result:', error);
+          log('Error processing file result:', error);
           reject(new Error('Error processing file data'));
         }
       };
 
       reader.onerror = (error) => {
-        console.error('FileReader error:', error);
+        log('FileReader error:', error);
         reject(new Error(`Error reading file: ${file.name}`));
       };
 
@@ -89,7 +92,7 @@ export const useFileUpload = (options: FileUploadOptions = {}) => {
       try {
         reader.readAsDataURL(file);
       } catch (error) {
-        console.error('Error starting file read:', error);
+        log('Error starting file read:', error);
         reject(new Error('Failed to start reading file'));
       }
     });

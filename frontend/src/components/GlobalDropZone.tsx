@@ -1,5 +1,8 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useFileUpload } from '../hooks/useFileUpload';
+import debug from 'debug';
+
+const log = debug('chat:global-dropzone');
 
 interface GlobalDropZoneProps {
   onFileUpload: (file: File) => void;
@@ -12,7 +15,7 @@ export const GlobalDropZone: React.FC<GlobalDropZoneProps> = ({ onFileUpload, ch
   const { validateFile, processFile, createFileAttachment } = useFileUpload({
     allowedTypes: ['*/*'], // Allow any file type
     onError: (error) => {
-      console.error('File upload error:', error);
+      log('File upload error:', error);
       // You could show a toast notification here
     }
   });
@@ -52,19 +55,19 @@ export const GlobalDropZone: React.FC<GlobalDropZoneProps> = ({ onFileUpload, ch
       for (const file of files) {
         if (validateFile(file)) {
           try {
-            const dataUrl = await processFile(file);
-            const attachment = createFileAttachment(file, dataUrl);
+            // const dataUrl = await processFile(file);
+            // const attachment = createFileAttachment(file, dataUrl);
             
             // Create a message-like object that can be sent
-            const fileMessage = {
-              type: 'file',
-              content: attachment
-            };
+            // const fileMessage = {
+            //   type: 'file',
+            //   content: attachment
+            // };
             
             // Call the upload handler
             onFileUpload(file);
           } catch (error) {
-            console.error('Error processing file:', error);
+            log('Error processing file:', error);
           }
         }
       }

@@ -33,8 +33,24 @@ A real-time chat application with Go WebSocket server and React frontend.
 - Go 1.21+
 - Node.js 18+
 - npm or yarn
+- Docker & Docker Compose (optional)
 
-### Backend Setup
+### Quick Start with Docker (Recommended)
+
+1. **Build and run everything**:
+```bash
+make quick
+# or
+./docker-scripts.sh build && ./docker-scripts.sh http
+```
+
+2. **Access the application**:
+   - HTTP: http://localhost:8090
+   - HTTPS: http://localhost:8443 (with `./docker-scripts.sh https`)
+
+### Manual Setup
+
+#### Backend Setup
 
 1. Install Go dependencies:
 ```bash
@@ -43,12 +59,22 @@ go mod tidy
 
 2. Run the server:
 ```bash
+# HTTP mode
 go run server.go
+
+# HTTPS mode with auto-generated certificates
+go run server.go -secure
+
+# Custom port
+go run server.go -port 3000
+
+# HTTPS on custom port
+go run server.go -port 8443 -secure
 ```
 
-The server will start on port 8090.
+The server will start on the specified port (default: 8090).
 
-### Frontend Setup
+#### Frontend Setup
 
 1. Install dependencies:
 ```bash
@@ -62,6 +88,20 @@ npm run dev
 ```
 
 The frontend will be available at http://localhost:5173
+
+### Docker Commands
+
+| Command | Description |
+|---------|-------------|
+| `make build` | Build frontend and Docker image |
+| `make run-http` | Run HTTP server (port 8090) |
+| `make run-https` | Run HTTPS server (port 8443) |
+| `make run-dev` | Run development server |
+| `make stop` | Stop all services |
+| `make logs` | Show logs |
+| `make clean` | Remove all containers and images |
+
+For more Docker options, see [DOCKER.md](DOCKER.md).
 
 ## API
 

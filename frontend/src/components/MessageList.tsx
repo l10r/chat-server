@@ -4,6 +4,9 @@ import type { Message, TypingUser } from '../types/chat';
 import { EmojiReplacer } from './EmojiReplacer';
 import { getUsernameStyle } from '../utils/userColors';
 import { FaCopy } from 'react-icons/fa';
+import debug from 'debug';
+
+const log = debug('chat:message-list');
 
 interface MessageListProps {
   messages: Message[];
@@ -46,7 +49,7 @@ export const MessageList: React.FC<MessageListProps> = ({
         setCopiedMessageId(message.id);
         setTimeout(() => setCopiedMessageId(null), 2000); // Reset after 2 seconds
       } catch (err) {
-        console.error('Failed to copy message:', err);
+        log('Failed to copy message:', err);
       }
     }
   };
@@ -148,25 +151,61 @@ export const MessageList: React.FC<MessageListProps> = ({
     }
   }, [typingUsers, isAtBottom, scrollToBottom]);
 
+  // Extract copy button component
+  const CopyButton: React.FC<{ message: Message; isCopied: boolean }> = ({ message, isCopied }) => {
+    const messageText = getMessageText(message);
+    
+    if (!messageText) return null;
+    
+    return (
+      <motion.button
+        className={`copy-button ${isCopied ? 'copied' : ''}`}
+        onClick={() => copyMessage(message)}
+        title={isCopied ? 'Copied!' : 'Copy message'}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        transition={{ duration: 0.1 }}
+      >
+        <FaCopy />
+        <AnimatePresence>
+          {isCopied && (
+            <motion.span 
+              className="copy-feedback"
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              transition={{ duration: 0.2 }}
+            >
+              Copied!
+            </motion.span>
+          )}
+        </AnimatePresence>
+      </motion.button>
+    );
+  };
+
+  // Extract motion props
+  const messageMotionProps = {
+    initial: { opacity: 0, y: 20, scale: 0.95 },
+    animate: { opacity: 1, y: 0, scale: 1 },
+    transition: { 
+      duration: 0.3, 
+      type: "spring" as const,
+      stiffness: 100,
+      damping: 15
+    },
+    layout: true
+  };
+
   const renderMessage = (message: Message, _index: number) => {
     const fromSelf = currentUser === message.f;
-    const messageText = getMessageText(message);
     const isCopied = copiedMessageId === message.id;
 
     return (
       <motion.div 
-        key={message.id} 
+        key={message.id}
         className={`message-item ${fromSelf ? 'message-from-self' : 'message-from-peer'}`}
-        initial={{ opacity: 0, y: 20, scale: 0.95 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ 
-          duration: 0.3, 
-          ease: "easeOut",
-          type: "spring",
-          stiffness: 100,
-          damping: 15
-        }}
-        layout
+        {...messageMotionProps}
       >
         <div className="message-header">
           <span 
@@ -186,31 +225,7 @@ export const MessageList: React.FC<MessageListProps> = ({
           <div className="message-text">
             <EmojiReplacer content={message.m} />
           </div>
-          {messageText && (
-            <motion.button
-              className={`copy-button ${isCopied ? 'copied' : ''}`}
-              onClick={() => copyMessage(message)}
-              title={isCopied ? 'Copied!' : 'Copy message'}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              transition={{ duration: 0.1 }}
-            >
-              <FaCopy />
-              <AnimatePresence>
-                {isCopied && (
-                  <motion.span 
-                    className="copy-feedback"
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.8 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    Copied!
-                  </motion.span>
-                )}
-              </AnimatePresence>
-            </motion.button>
-          )}
+          <CopyButton message={message} isCopied={isCopied} />
         </div>
       </motion.div>
     );

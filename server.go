@@ -1,12 +1,22 @@
 package main
 
 import (
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/tls"
+	"crypto/x509"
+	"crypto/x509/pkix"
 	"embed"
 	"encoding/json"
+	"encoding/pem"
+	"flag"
 	"fmt"
 	"io/fs"
 	"log"
+	"math/big"
+	"net"
 	"net/http"
+	"os"
 	"sync"
 	"time"
 
@@ -340,7 +350,91 @@ func serveWS(hub *Hub, w http.ResponseWriter, r *http.Request) {
 	go client.readPump()
 }
 
+// configureTLSForSelfSigned configures TLS to skip verification for self-signed certificates
+func configureTLSForSelfSigned() {
+	// Configure HTTP client to skip TLS verification for self-signed certificates
+	http.DefaultTransport = &http.Transport{
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: true,
+		},
+	}
+
+	// Set default TLS config for any other HTTP operations
+	http.DefaultClient.Transport = &http.Transport{
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: true,
+		},
+	}
+
+	log.Println("Configured TLS to skip verification for self-signed certificates")
+}
+
+// generateSelfSignedCert generates a self-signed certificate for HTTPS
+func generateSelfSignedCert() error {
+	// Generate private key
+	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		return fmt.Errorf("failed to generate private key: %v", err)
+	}
+
+	// Create certificate template
+	template := x509.Certificate{
+		SerialNumber: big.NewInt(1),
+		Subject: pkix.Name{
+			Organization:  []string{"Chat Server"},
+			Country:       []string{"US"},
+			Province:      []string{""},
+			Locality:      []string{"San Francisco"},
+			StreetAddress: []string{""},
+			PostalCode:    []string{""},
+		},
+		NotBefore:   time.Now(),
+		NotAfter:    time.Now().Add(365 * 24 * time.Hour), // Valid for 1 year
+		KeyUsage:    x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
+		ExtKeyUsage: []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+		IPAddresses: []net.IP{net.IPv4(127, 0, 0, 1), net.IPv6loopback},
+	}
+
+	// Create certificate
+	certDER, err := x509.CreateCertificate(rand.Reader, &template, &template, &privateKey.PublicKey, privateKey)
+	if err != nil {
+		return fmt.Errorf("failed to create certificate: %v", err)
+	}
+
+	// Save private key
+	keyFile, err := os.Create("server.key")
+	if err != nil {
+		return fmt.Errorf("failed to create key file: %v", err)
+	}
+	defer keyFile.Close()
+
+	keyPEM := &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(privateKey)}
+	if err := pem.Encode(keyFile, keyPEM); err != nil {
+		return fmt.Errorf("failed to encode key: %v", err)
+	}
+
+	// Save certificate
+	certFile, err := os.Create("server.crt")
+	if err != nil {
+		return fmt.Errorf("failed to create cert file: %v", err)
+	}
+	defer certFile.Close()
+
+	certPEM := &pem.Block{Type: "CERTIFICATE", Bytes: certDER}
+	if err := pem.Encode(certFile, certPEM); err != nil {
+		return fmt.Errorf("failed to encode cert: %v", err)
+	}
+
+	log.Println("Generated self-signed certificate: server.crt and server.key")
+	return nil
+}
+
 func main() {
+	// Parse command line arguments
+	port := flag.Int("port", 8090, "Port to run the server on")
+	secure := flag.Bool("secure", false, "Enable HTTPS with auto-generated certificates if not found")
+	flag.Parse()
+
 	hub := newHub()
 	go hub.run()
 
@@ -369,7 +463,41 @@ func main() {
 		SetIndexPath("index.html")
 
 	r.Use(spaExample.GIN)
-	//	r.GET("/*any", spaExample.GIN)
-	log.Println("Starting server on port 8090")
-	r.Run(":8090")
+
+	serverAddr := fmt.Sprintf(":%d", *port)
+
+	if *secure {
+		// Configure TLS for self-signed certificates
+		configureTLSForSelfSigned()
+
+		// Check if certificate files exist
+		_, certErr := os.Stat("server.crt")
+		_, keyErr := os.Stat("server.key")
+
+		if os.IsNotExist(certErr) || os.IsNotExist(keyErr) {
+			log.Println("Certificate files not found, generating self-signed certificates...")
+			if err := generateSelfSignedCert(); err != nil {
+				log.Fatalf("Failed to generate certificates: %v", err)
+			}
+		} else {
+			log.Println("Using existing certificate files: server.crt and server.key")
+		}
+
+		// Create HTTPS server with TLS config
+		server := &http.Server{
+			Addr:    serverAddr,
+			Handler: r,
+			TLSConfig: &tls.Config{
+				InsecureSkipVerify: true, // Allow self-signed certificates
+			},
+		}
+
+		log.Printf("Starting HTTPS server on port %d (with insecure skip verify)", *port)
+		if err := server.ListenAndServeTLS("server.crt", "server.key"); err != nil {
+			log.Fatalf("Failed to start HTTPS server: %v", err)
+		}
+	} else {
+		log.Printf("Starting HTTP server on port %d", *port)
+		r.Run(serverAddr)
+	}
 }

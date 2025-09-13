@@ -1,2 +1,46 @@
+# Dependencies
 node_modules
 **/node_modules
+
+# Build artifacts
+server
+chatserver
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Frontend build
+frontend/dist
+frontend/build
+
+# Logs
+*.log
+server.log
+
+# Certificates (sensitive)
+server.crt
+server.key
+certs/
+*.pem
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Temporary files
+*.tmp
+*.temp

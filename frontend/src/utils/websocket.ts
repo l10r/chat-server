@@ -1,4 +1,8 @@
 // Simple WebSocket utilities
+import debug from 'debug';
+
+const log = debug('chat:websocket');
+
 export interface WebSocketMessage {
   type: string;
   [key: string]: any;
@@ -14,21 +18,21 @@ let callbacks: {
 
 export const connectWebSocket = (url: string, cb: typeof callbacks) => {
   callbacks = cb;
-  console.log('Connecting to WebSocket:', url);
+  log('Connecting to WebSocket:', url);
   ws = new WebSocket(url);
   
   ws.onopen = () => {
-    console.log('WebSocket connected successfully');
+    log('WebSocket connected successfully');
     callbacks.onOpen?.();
   };
   
   ws.onclose = (event) => {
-    console.log('WebSocket disconnected:', event.code, event.reason);
+    log('WebSocket disconnected:', event.code, event.reason);
     callbacks.onClose?.();
   };
   
   ws.onerror = (error) => {
-    console.error('WebSocket error:', error);
+    log('WebSocket error:', error);
     callbacks.onError?.(error);
   };
   
@@ -39,7 +43,7 @@ export const connectWebSocket = (url: string, cb: typeof callbacks) => {
       //console.log('Parsed message:', message);
       callbacks.onMessage?.(message);
     } catch (error) {
-      console.error('Error parsing message:', error);
+      log('Error parsing message:', error);
     }
   };
 };

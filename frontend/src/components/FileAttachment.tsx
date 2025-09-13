@@ -1,6 +1,9 @@
 import React from 'react';
 import { IconButton, Tooltip } from '@mui/material';
 import { Download as DownloadIcon } from '@mui/icons-material';
+import debug from 'debug';
+
+const log = debug('chat:file-attachment');
 import { 
   FaFile, 
   FaFileImage, 
@@ -23,10 +26,10 @@ interface FileAttachmentProps {
 }
 
 export const FileAttachment: React.FC<FileAttachmentProps> = ({ url, name, type, size }) => {
-  console.log('FileAttachment props:', { url, name, type, size });
+  log('FileAttachment props:', { url, name, type, size });
   
   const getFileIcon = (fileType: string, fileName: string) => {
-    console.log('Getting icon for file type:', fileType, 'filename:', fileName);
+    log('Getting icon for file type:', fileType, 'filename:', fileName);
     
     // Get file extension from filename as fallback
     const extension = fileName.split('.').pop()?.toLowerCase() || '';

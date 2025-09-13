@@ -78,6 +78,7 @@ body {
 .messages-container {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 12px 20px;
   width: 100%;
   height: 100%;
@@ -99,6 +100,8 @@ body {
   margin-bottom: 8px;
   padding: 8px 0;
   position: relative;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .message-item:hover {
@@ -148,10 +151,11 @@ body {
   align-items: flex-end;
   gap: 8px;
   max-width: 70%;
-  min-width: fit-content;
+  min-width: 0;
   word-wrap: break-word;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
   margin: 0;
+  overflow: hidden;
   line-height: 1.4;
   font-family: 'JetBrains Mono', monospace;
   border: 1px solid #333;
@@ -161,6 +165,10 @@ body {
 .message-text {
   flex: 1;
   min-width: 0;
+  max-width: 100%;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  overflow-x: hidden;
 }
 
 .message-from-self .message-content {
@@ -207,8 +215,10 @@ body {
 .user-list {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 4px;
   align-items: center;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .user-item {
@@ -223,6 +233,8 @@ body {
   gap: 6px;
   font-family: 'JetBrains Mono', monospace;
   height: 24px;
+  flex-shrink: 0;
+  white-space: nowrap;
   line-height: 1;
 }
 
@@ -253,6 +265,8 @@ body {
   justify-content: space-between;
   align-items: center;
   height: 32px;
+  min-width: 0; /* Allow shrinking */
+  overflow: hidden; /* Prevent overflow */
 }
 
 .channel-info {
@@ -260,6 +274,8 @@ body {
   align-items: center;
   gap: 8px;
   height: 100%;
+  min-width: 0;
+  flex-shrink: 1;
 }
 
 .channel-name {
@@ -304,6 +320,26 @@ body {
   align-items: center;
   gap: 8px;
   height: 100%;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.connection-status-mobile {
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+
+.connection-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #4caf50;
+  transition: all 0.2s ease;
+}
+
+.connection-status-desktop {
+  display: flex;
 }
 
 .current-user {
@@ -311,6 +347,11 @@ body {
   color: #888;
   font-family: 'JetBrains Mono', monospace;
   line-height: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 150px;
+  flex-shrink: 1;
 }
 
 .logout-button {
@@ -486,7 +527,138 @@ body {
   z-index: 1000;
   margin-bottom: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-  animation: pulse 1s infinite;
+}
+
+/* Custom Audio Player Styles */
+.custom-audio-player {
+  margin: 8px 0;
+  padding: 12px;
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 8px;
+  max-width: 400px;
+}
+
+.custom-audio-player button {
+  transition: all 0.2s ease;
+}
+
+.custom-audio-player button:hover {
+  transform: scale(1.05);
+  opacity: 0.9;
+}
+
+/* Custom Slider Styles - MUI-like appearance */
+.custom-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.custom-slider::-webkit-slider-track {
+  background: transparent;
+  height: 4px;
+  border-radius: 2px;
+}
+
+.custom-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  background: #4a9eff;
+  height: 16px;
+  width: 16px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid #ffffff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  margin-top: -6px;
+}
+
+.custom-slider::-webkit-slider-thumb:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Firefox styles */
+.custom-slider::-moz-range-track {
+  background: transparent;
+  height: 4px;
+  border-radius: 2px;
+  border: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+
+.custom-slider::-moz-range-thumb {
+  background: #4a9eff;
+  height: 16px;
+  width: 16px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid #ffffff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  -moz-appearance: none;
+  appearance: none;
+}
+
+.custom-slider::-moz-range-thumb:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.volume-slider::-moz-range-track {
+  background: #333;
+  height: 4px;
+  border-radius: 2px;
+  border: none;
+}
+
+/* Firefox specific fixes for range inputs */
+.volume-slider {
+  -moz-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.progress-slider {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.progress-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  background: #4a9eff;
+  height: 12px;
+  width: 12px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid #fff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.progress-slider::-moz-range-thumb {
+  background: #4a9eff;
+  height: 12px;
+  width: 12px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid #fff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  -moz-appearance: none;
+  appearance: none;
+}
+
+.progress-slider::-moz-range-track {
+  background: #333;
+  height: 4px;
+  border-radius: 2px;
+  border: none;
+  -moz-appearance: none;
+  appearance: none;
 }
 
 .recording-dot {
@@ -494,7 +666,6 @@ body {
   height: 8px;
   background: white;
   border-radius: 50%;
-  animation: blink 1s infinite;
 }
 
 @keyframes blink {
@@ -916,6 +1087,69 @@ body {
 }
 
 /* Responsive design */
+@media (max-width: 1024px) {
+  .user-section {
+    flex-wrap: wrap;
+    height: auto;
+    min-height: 32px;
+  }
+  
+  .user-actions {
+    gap: 4px;
+    flex-shrink: 0;
+  }
+  
+  .current-user {
+    max-width: 120px;
+    font-size: 11px;
+  }
+  
+  .logout-button {
+    padding: 4px 8px;
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 900px) {
+  .user-section {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    height: auto;
+  }
+  
+  .channel-info {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .user-actions {
+    width: 100%;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .connection-status-mobile {
+    display: flex;
+  }
+  
+  .connection-status-desktop {
+    display: none;
+  }
+  
+  .current-user {
+    order: 1;
+  }
+  
+  .connection-status-mobile {
+    order: 2;
+  }
+  
+  .logout-button {
+    order: 3;
+  }
+}
+
 @media (max-width: 768px) {
   .messages-container {
     padding: 12px;
@@ -924,25 +1158,87 @@ body {
   .chat-form {
     padding: 12px;
   }
+}
+
+@media (max-width: 480px) {
+  .chat-form {
+    padding: 8px;
+  }
+  
+  .messages-container {
+    padding: 8px;
+  }
   
   .message-input-wrapper {
     padding: 8px;
   }
-  
-  .emoji-picker {
-    width: 280px;
-    height: 240px;
-  }
-  
+}
+
+@media (max-width: 480px) {
   .user-section {
-    flex-direction: column;
-    gap: 12px;
-    align-items: flex-start;
+    gap: 6px;
   }
   
   .user-actions {
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
     width: 100%;
     justify-content: space-between;
+    flex-wrap: wrap;
+  }
+  
+  .current-user {
+    max-width: 120px;
+    font-size: 10px;
+    order: 1;
+  }
+  
+  .connection-status-mobile {
+    order: 2;
+  }
+  
+  .logout-button {
+    order: 3;
+    padding: 3px 6px;
+    font-size: 10px;
+  }
+  
+  .channel-info {
+    gap: 4px;
+  }
+  
+  .channel-name {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 360px) {
+  .user-section {
+    gap: 4px;
+  }
+  
+  .user-actions {
+    gap: 4px;
+  }
+  
+  .current-user {
+    max-width: 100px;
+    font-size: 9px;
+  }
+  
+  .logout-button {
+    padding: 2px 4px;
+    font-size: 9px;
+  }
+  
+  .connection-indicator {
+    width: 6px;
+    height: 6px;
+  }
+  
+  .channel-name {
+    font-size: 11px;
   }
 }
 
@@ -990,12 +1286,20 @@ body {
 /* Adjust message content to make room for copy button */
 .message-content {
   padding-right: 40px;
+  max-width: 100%;
+  overflow-x: hidden;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
 }
 
 /* Markdown content styles */
 .markdown-content {
   line-height: 1.6;
   color: inherit;
+  max-width: 100%;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  overflow-x: hidden;
 }
 
 .markdown-content h1,
@@ -1046,9 +1350,30 @@ body {
   padding: 16px;
   margin: 12px 0;
   overflow-x: auto;
+  overflow-y: hidden;
+  white-space: pre;
+  max-width: 100%;
   font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
   font-size: 14px;
   line-height: 1.4;
+}
+
+/* Ensure pre elements inside code blocks also scroll horizontally */
+.markdown-content pre {
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: pre;
+  margin: 0;
+  padding: 0;
+}
+
+/* Global code scrolling rules */
+code, pre {
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: pre;
 }
 
 .markdown-content .code-block code {
@@ -1057,6 +1382,10 @@ body {
   border: none;
   border-radius: 0;
   color: #e6e6e6;
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: pre;
+  max-width: 100%;
 }
 
 .markdown-content .inline-code {

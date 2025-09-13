@@ -1,4 +1,7 @@
 import React from 'react';
+import debug from 'debug';
+
+const log = debug('chat:emoji-picker');
 
 interface EmojiPickerProps {
   onEmojiSelect: (emoji: string) => void;
@@ -120,15 +123,15 @@ const emojiDatabase = {
 };
 
 export const EmojiPicker: React.FC<EmojiPickerProps> = ({ onEmojiSelect, isVisible, onToggle }) => {
-  console.log('EmojiPicker rendered, isVisible:', isVisible);
+  log('EmojiPicker rendered, isVisible:', isVisible);
   
   const handleEmojiClick = (slug: string) => {
-    console.log('Emoji clicked:', slug);
+    log('Emoji clicked:', slug);
     onEmojiSelect(` *${slug}* `);
   };
 
   if (!isVisible) {
-    console.log('EmojiPicker not visible, returning null');
+    log('EmojiPicker not visible, returning null');
     return null;
   }
 
@@ -146,7 +149,7 @@ export const EmojiPicker: React.FC<EmojiPickerProps> = ({ onEmojiSelect, isVisib
               src={`/static/emic/${slug}.png`} 
               alt={name}
               onError={(e) => {
-                console.log('Failed to load emoji:', slug);
+                log('Failed to load emoji:', slug);
                 e.currentTarget.style.display = 'none';
               }}
               onLoad={() => {

@@ -1,0 +1,69 @@
+version: '3.8'
+
+services:
+  # HTTP Chat Server
+  chat-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8090:8090"
+    environment:
+      - PORT=8090
+      - SECURE=false
+    volumes:
+      # Mount for persistent certificates (optional)
+      - ./certs:/app/certs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8090/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # HTTPS Chat Server
+  chat-server-https:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8443:8443"
+    environment:
+      - PORT=8443
+      - SECURE=true
+    volumes:
+      # Mount for persistent certificates
+      - ./certs:/app/certs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "--no-check-certificate", "https://localhost:8443/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    profiles:
+      - https
+
+  # Development version
+  chat-server-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    ports:
+      - "8090:8090"
+      - "8443:8443"
+    volumes:
+      # Mount source code for development
+      - .:/app
+      - ./certs:/app/certs
+    environment:
+      - PORT=8090
+      - SECURE=false
+    restart: unless-stopped
+    profiles:
+      - dev
+
+volumes:
+  certs:
+    driver: local

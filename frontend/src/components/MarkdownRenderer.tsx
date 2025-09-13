@@ -9,14 +9,16 @@ interface MarkdownRendererProps {
 }
 
 export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content }) => {
+
   return (
     <div className="markdown-content">
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[rehypeHighlight]}
+        skipHtml={true}
         components={{
           // Custom styling for code blocks
-          code({ node, inline, className, children, ...props }) {
+          code({ node, inline, className, children, ...props }: any) {
             const match = /language-(\w+)/.exec(className || '');
             return !inline && match ? (
               <pre className="code-block">
@@ -48,13 +50,21 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content }) =
               </div>
             );
           },
-          // Custom styling for links
+          // Custom styling for links with security
           a({ children, href, ...props }) {
+            // Sanitize href to prevent javascript: and data: URLs
+            const sanitizedHref = href && (
+              href.startsWith('http://') || 
+              href.startsWith('https://') || 
+              href.startsWith('mailto:') || 
+              href.startsWith('tel:')
+            ) ? href : '#';
+            
             return (
               <a 
-                href={href} 
+                href={sanitizedHref} 
                 target="_blank" 
-                rel="noopener noreferrer"
+                rel="noopener noreferrer nofollow"
                 className="markdown-link"
                 {...props}
               >

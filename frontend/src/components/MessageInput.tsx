@@ -3,6 +3,9 @@ import { EmojiPicker } from './EmojiPicker';
 import { FaPaperclip, FaSmile, FaPaperPlane, FaMicrophone, FaStop } from 'react-icons/fa';
 import { VoiceMemoRecorder, formatDuration } from '../utils/voiceMemo';
 import { useFileUpload } from '../hooks/useFileUpload';
+import debug from 'debug';
+
+const log = debug('chat:message-input');
 
 interface MessageInputProps {
   onSendMessage: (message: string | any) => void;
@@ -26,7 +29,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
   const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   
   const { processFile, createFileAttachment } = useFileUpload({
-    onError: (error) => alert(error)
+    onError: (error) => log('File upload error:', error)
   });
 
   const handleFileUpload = useCallback(async (file: File) => {
@@ -35,7 +38,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
       const attachment = createFileAttachment(file, dataUrl);
       onSendMessage(attachment);
     } catch (error) {
-      console.error('Error processing file:', error);
+      log('Error processing file:', error);
       // Error is already handled by the hook
     }
   }, [processFile, createFileAttachment, onSendMessage]);
@@ -92,7 +95,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
       typingTimeoutRef.current = setTimeout(() => {
         setIsTyping(false);
         onTypingChange(false);
-      }, 1000);
+      }, 2e3);
     }
   };
 
@@ -148,18 +151,32 @@ export const MessageInput: React.FC<MessageInputProps> = ({
       }, 1000);
 
     } catch (error) {
-      console.error('Error starting recording:', error);
-      alert(error instanceof Error ? error.message : 'Could not access microphone. Please check permissions.');
+      log('Error starting recording:', error);
+      log('Could not access microphone. Please check permissions.');
     }
   }, []);
 
-  const stopRecording = useCallback(() => {
+  const stopRecording = useCallback(async () => {
     if (voiceRecorderRef.current && isRecording) {
       try {
         const voiceMemo = voiceRecorderRef.current.stopRecording();
         
-        // Send the voice memo
-        onSendMessage(voiceMemo);
+        // Convert blob to base64 data URL for transmission
+        const reader = new FileReader();
+        reader.onload = () => {
+          const base64Data = reader.result as string;
+          const voiceMemoForTransmission = {
+            type: voiceMemo.type,
+            url: base64Data, // Use base64 data URL instead of blob URL
+            name: voiceMemo.name,
+            duration: voiceMemo.duration,
+            size: voiceMemo.blob.size
+          };
+          
+          // Send the voice memo
+          onSendMessage(voiceMemoForTransmission);
+        };
+        reader.readAsDataURL(voiceMemo.blob);
         
         // Clean up
         voiceRecorderRef.current.cleanup();
@@ -180,13 +197,13 @@ export const MessageInput: React.FC<MessageInputProps> = ({
           try {
             URL.revokeObjectURL(voiceMemo.url);
           } catch (e) {
-            console.log('URL already revoked or invalid');
+            log('URL already revoked or invalid');
           }
         }, 30000); // Revoke after 30 seconds
         
       } catch (error) {
-        console.error('Error stopping recording:', error);
-        alert('Error stopping recording. Please try again.');
+        log('Error stopping recording:', error);
+        log('Error stopping recording. Please try again.');
       }
     }
   }, [isRecording, onSendMessage]);
@@ -284,9 +301,9 @@ export const MessageInput: React.FC<MessageInputProps> = ({
           type="button"
           onClick={(e) => {
             e.stopPropagation();
-            console.log('Emoji button clicked, current state:', showEmojiPicker);
+            log('Emoji button clicked, current state:', showEmojiPicker);
             setShowEmojiPicker(!showEmojiPicker);
-            console.log('Emoji picker should be:', !showEmojiPicker);
+            log('Emoji picker should be:', !showEmojiPicker);
           }}
           className="emoji-toggle"
           disabled={disabled}
@@ -324,7 +341,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
           onEmojiSelect={handleEmojiClick}
           isVisible={showEmojiPicker}
           onToggle={() => {
-            console.log('Emoji picker toggle clicked');
+            log('Emoji picker toggle clicked');
             setShowEmojiPicker(false);
           }}
         />
