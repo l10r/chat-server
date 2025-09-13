@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { initChat, login, sendChatMessage, sendTyping, cleanup } from '../services/chatService';
+import { initChat, login, sendChatMessage, sendTyping, cleanup, getEncryptionStatus, getPublicKey, setUserPublicKey } from '../services/chatService';
 import type { Message, TypingUser } from '../types/chat';
 
 export const useChat = () => {
@@ -67,5 +67,8 @@ export const useChat = () => {
     sendMessage,
     sendTyping: sendTypingStatus,
     clearMessages,
+    getEncryptionStatus,
+    getPublicKey,
+    setUserPublicKey,
   };
 };

@@ -9,6 +9,7 @@ import { UserList } from './UserList';
 import { LoginModal } from './LoginModal';
 import { LoadingSpinner } from './LoadingSpinner';
 import { GlobalDropZone } from './GlobalDropZone';
+import { EncryptionStatus } from './EncryptionStatus';
 import { useChat } from '../hooks/useChat';
 import { useNotifications } from '../hooks/useNotifications';
 
@@ -21,6 +22,7 @@ export const Chat: React.FC = () => {
   const [currentChannel, setCurrentChannel] = useState<string>('main');
   const [urlCopied, setUrlCopied] = useState(false);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [encryptionStatus, setEncryptionStatus] = useState({ enabled: false, hasKeys: false });
   const messagesContainerRef = useRef<HTMLDivElement>(null);
 
   const {
@@ -32,6 +34,7 @@ export const Chat: React.FC = () => {
     login: chatLogin,
     sendMessage,
     sendTyping,
+    getEncryptionStatus,
   } = useChat();
 
   const isOnline = isConnected;
@@ -42,6 +45,13 @@ export const Chat: React.FC = () => {
   useEffect(() => {
     init();
   }, [init]);
+
+  // Update encryption status
+  useEffect(() => {
+    if (isConnected) {
+      setEncryptionStatus(getEncryptionStatus());
+    }
+  }, [isConnected, getEncryptionStatus]);
 
   // Handle notifications for new messages
   useEffect(() => {
@@ -225,6 +235,10 @@ export const Chat: React.FC = () => {
               <div className="user-section">
                 <div className="channel-info">
                   <span className="channel-name">#{currentChannel}</span>
+                  <EncryptionStatus 
+                    enabled={encryptionStatus.enabled} 
+                    hasKeys={encryptionStatus.hasKeys} 
+                  />
                   <Tooltip title="Copy channel URL">
                     <IconButton
                       onClick={() => {

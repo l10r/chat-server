@@ -1,6 +1,7 @@
 import { connectWebSocket, sendMessage, disconnectWebSocket, isConnected } from '../utils/websocket';
 import type { WebSocketMessage } from '../utils/websocket';
 import type { Message, TypingUser } from '../types/chat';
+import { encryptionService } from './encryptionService';
 import debug from 'debug';
 
 const log = debug('chat:service');
@@ -35,6 +36,8 @@ export const initChat = (callbacks: {
   onConnect?: () => void;
   onDisconnect?: () => void;
 }) => {
+  // Initialize encryption service
+  encryptionService.init();
   connectWebSocket(getWebSocketUrl(), {
     onOpen: () => {
       log('Connected to chat server');
@@ -51,6 +54,11 @@ export const initChat = (callbacks: {
       switch (message.type) {
         case 'new-msg':
           if (message.message) {
+            // Try to decrypt message if it's encrypted
+            const decryptedContent = encryptionService.decryptMessage(message.message.m);
+            if (decryptedContent !== null) {
+              message.message.m = decryptedContent;
+            }
             callbacks.onMessage?.(message.message);
           }
           break;
@@ -96,6 +104,7 @@ export const login = (nick: string, channel: string = 'main') => {
 };
 
 export const sendChatMessage = (content: string | object) => {
+  // For now, send as plain text (encryption will be added when we have user keys)
   sendMessage({
     type: 'message',
     data: content,
@@ -117,3 +126,8 @@ export const getConnectionStatus = () => ({
   isConnected: isConnected(),
   isConnecting: false, // Simplified
 });
+
+// Encryption functions
+export const getEncryptionStatus = () => encryptionService.getEncryptionStatus();
+export const getPublicKey = () => encryptionService.getPublicKey();
+export const setUserPublicKey = (userId: string, publicKey: string) => encryptionService.setUserPublicKey(userId, publicKey);
