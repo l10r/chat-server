@@ -14,10 +14,13 @@ chatserver
 frontend/dist
 frontend/build
 
+# Build artifacts
+dist/
+build/
+
 # Logs
 *.log
 server.log
-dist/
 # Certificates (sensitive)
 server.crt
 server.key
